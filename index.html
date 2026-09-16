@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUS 4040 Quiz Simulator - Weeks 1-3</title>
+<style>
+:root {
+--bg: #0f1117;
+--card: #1a1d29;
+--border: #2a2e3d;
+--text: #e8e9ed;
+--muted: #9aa0b0;
+--accent: #5b8cff;
+--good: #3ecf8e;
+--bad: #ff6b6b;
+}
+* { box-sizing: border-box; }
+body {
+margin: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+background: var(--bg);
+color: var(--text);
+display: flex;
+justify-content: center;
+padding: 24px 16px;
+min-height: 100vh;
+}
+.app {
+width: 100%;
+max-width: 640px;
+}
+h1 {
+font-size: 1.4rem;
+margin: 0 0 4px 0;
+}
+.subtitle {
+color: var(--muted);
+font-size: 0.9rem;
+margin-bottom: 24px;
+}
+.card {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 24px;
+}
+.progress-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 16px;
+font-size: 0.85rem;
+color: var(--muted);
+}
+.progress-bar {
+height: 6px;
+background: var(--border);
+border-radius: 4px;
+overflow: hidden;
+margin-bottom: 24px;
+}
+.progress-fill {
+height: 100%;
+background: var(--accent);
+transition: width 0.25s ease;
+}
+.week-tag {
+display: inline-block;
+font-size: 0.75rem;
+color: var(--accent);
+border: 1px solid var(--accent);
+border-radius: 999px;
+padding: 2px 10px;
+margin-bottom: 12px;
+}
+.question {
+font-size: 1.1rem;
+line-height: 1.5;
+margin-bottom: 20px;
+}
+.options {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.option {
+text-align: left;
+background: transparent;
+border: 1px solid var(--border);
+color: var(--text);
+padding: 14px 16px;
+border-radius: 10px;
+font-size: 1rem;
+cursor: pointer;
+transition: border-color 0.15s ease, background 0.15s ease;
+}
+.option:hover:not(:disabled) {
+border-color: var(--accent);
+}
+.option:disabled {
+cursor: default;
+}
+.option.correct {
+border-color: var(--good);
+background: rgba(62, 207, 142, 0.12);
+}
+.option.incorrect {
+border-color: var(--bad);
+background: rgba(255, 107, 107, 0.12);
+}
+.feedback {
+margin-top: 20px;
+padding: 16px;
+border-radius: 10px;
+font-size: 0.95rem;
+line-height: 1.5;
+}
+.feedback.good {
+background: rgba(62, 207, 142, 0.1);
+border: 1px solid var(--good);
+}
+.feedback.bad {
+background: rgba(255, 107, 107, 0.1);
+border: 1px solid var(--bad);
+}
+.feedback strong { display: block; margin-bottom: 4px; }
+.next-btn, .primary-btn {
+margin-top: 20px;
+background: var(--accent);
+color: white;
+border: none;
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 1rem;
+cursor: pointer;
+width: 100%;
+}
+.next-btn:hover, .primary-btn:hover { opacity: 0.9; }
+.secondary-btn {
+margin-top: 10px;
+background: transparent;
+color: var(--text);
+border: 1px solid var(--border);
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 1rem;
+cursor: pointer;
+width: 100%;
+}
+.score-headline {
+font-size: 2.2rem;
+font-weight: 700;
+margin: 8px 0;
+}
+.score-sub {
+color: var(--muted);
+margin-bottom: 20px;
+}
+.missed-list {
+text-align: left;
+margin: 16px 0;
+padding-left: 0;
+list-style: none;
+}
+.missed-list li {
+border-bottom: 1px solid var(--border);
+padding: 10px 0;
+font-size: 0.9rem;
+}
+.missed-list .miss-week {
+color: var(--accent);
+font-size: 0.75rem;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>BUS 4040 Quiz Simulator</h1>
+<div class="subtitle">Weeks 1-3, AI for Business Applications</div>
+<div class="card" id="app-card"></div>
+</div>
+
+<script>
+const QUESTIONS = [
+{
+week: "Week 1",
+type: "tf",
+q: "True or False: This course will teach you how to program by hand.",
+options: ["True", "False"],
+correct: 1,
+explanation: "The narrative says plainly: you will not learn to program in this class, AI does the building, you decide what gets built."
+},
+{
+week: "Week 1",
+type: "mc",
+q: "According to the grading breakdown, how much of your grade is GitHub Setup worth?",
+options: ["5%", "10%", "15%", "25%"],
+correct: 0,
+explanation: "The grading table lists GitHub Setup at 5%, for GitHub connectivity and a successful Pull Request."
+},
+{
+week: "Week 1",
+type: "mc",
+q: "In the course arc, what comes right after customer interview?",
+options: ["Packaging", "Requirements", "Data layer", "Tools overview"],
+correct: 1,
+explanation: "The arc is: tools, process overview, customer interview, requirements, SPEC, data layer, AI builds working app, packaging."
+},
+{
+week: "Week 1",
+type: "tf",
+q: "True or False: If you already have a GitHub account, you should create a brand new one for this class.",
+options: ["True", "False"],
+correct: 1,
+explanation: "The homework says: if you already have a GitHub account, do not create a second one, just add your U of I email to it."
+},
+{
+week: "Week 1",
+type: "mc",
+q: "Where do you go to add your U of I email to an existing GitHub account?",
+options: ["github.com/settings/emails", "github.com/settings/security", "github.com/join", "github.com/settings/billing"],
+correct: 0,
+explanation: "The homework points to github.com/settings/emails (or Settings, Emails) to add and verify the U of I address."
+},
+{
+week: "Week 1",
+type: "tf",
+q: "True or False: GitHub requires two-factor authentication.",
+options: ["True", "False"],
+correct: 0,
+explanation: "The homework says plainly: turn on two-factor authentication, GitHub requires it."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "Who created Git, and why?",
+options: [
+"Linus Torvalds, after the Linux kernel project lost access to its proprietary tool",
+"A team at GitHub, to launch alongside the GitHub website",
+"Bill Gates, to compete with early version control tools",
+"Guido van Rossum, for managing Python's source code"
+],
+correct: 0,
+explanation: "In 2005, Linus Torvalds created Git for Linux kernel development after losing access to the project's proprietary tool."
+},
+{
+week: "Week 2",
+type: "tf",
+q: "True or False: In Git, every developer holds a full copy of the entire project history.",
+options: ["True", "False"],
+correct: 0,
+explanation: "Git is decentralized: every developer holds a full copy of the entire history, there's no single bottleneck or single point of failure."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "When creating a new repo from the GitHub web interface, what setting should you turn on so it isn't empty when you clone it?",
+options: ["Enable Wiki", "Add README", "Enable Issues", "Add .gitignore"],
+correct: 1,
+explanation: "Turning on Add README creates the first commit and the main branch, so the repo isn't empty when you clone it."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "In the Git multiverse analogy from class, what does checking out a new branch do?",
+options: [
+"Creates a new timeline (copy) of main",
+"Permanently deletes main",
+"Pushes your changes straight to customers",
+"Merges every branch into one"
+],
+correct: 0,
+explanation: "Checkout a branch to create a new timeline (copy) of main, from the Git-as-Marvel-multiverse slide."
+},
+{
+week: "Week 2",
+type: "tf",
+q: "True or False: For this class, HTTPS authentication with GitHub is fine, you don't need to set up SSH keys.",
+options: ["True", "False"],
+correct: 0,
+explanation: "The connecting-to-GitHub guide says directly: for this class, HTTPS is fine."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "Which command logs you into GitHub from the command line using the GitHub CLI?",
+options: ["git login", "gh auth login", "github signin", "gh connect"],
+correct: 1,
+explanation: "gh auth login handles GitHub CLI login, walking you through account, protocol, and browser authentication."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "You get the error GH007, your push would publish a private email address. What's the fix?",
+options: [
+"Delete your GitHub account and start over",
+"Turn off two-factor authentication",
+"Set git config user.email to your GitHub noreply address",
+"Reinstall Git"
+],
+correct: 2,
+explanation: "The common-problems table says to set your git config email to the GitHub noreply address shown under Settings, Emails."
+},
+{
+week: "Week 2",
+type: "tf",
+q: "True or False: Best practice in this class is to commit your changes directly to the main branch.",
+options: ["True", "False"],
+correct: 1,
+explanation: "The guide says to avoid committing to main, create a new branch instead, which mirrors common real-world PR workflows."
+},
+{
+week: "Week 2",
+type: "mc",
+q: "After you push a new branch, what's the next step to get your changes into main?",
+options: ["Re-clone the repo", "Create a Pull Request", "Delete the branch immediately", "Email the professor the code"],
+correct: 1,
+explanation: "The workflow is push the branch, then create a PR (for example with gh pr create), review it, and merge it."
+},
+{
+week: "Week 3",
+type: "mc",
+q: "In class terms, what is a harness?",
+options: [
+"The program you use to interact with an AI model",
+"The AI model itself",
+"A chunk of text an AI reads",
+"A company's family of model sizes"
+],
+correct: 0,
+explanation: "A harness is the program you use to interact with an AI model, the model is the AI behind the harness, like a music player versus the music."
+},
+{
+week: "Week 3",
+type: "tf",
+q: "True or False: A larger AI context window can sometimes cause a session to drift off track.",
+options: ["True", "False"],
+correct: 0,
+explanation: "The Parameters and Tokens slide notes: large context windows can cause AI sessions to drift off track."
+},
+{
+week: "Week 3",
+type: "mc",
+q: "Which Claude model tier is described as the cost-effective, everyday workhorse?",
+options: ["Fable", "Opus", "Sonnet", "Haiku"],
+correct: 2,
+explanation: "The narrative says: Sonnet is the cost effective everyday workhorse."
+},
+{
+week: "Week 3",
+type: "mc",
+q: "Roughly speaking, what is a token in AI?",
+options: [
+"A chunk of text, about three-quarters of an English word on average",
+"A single tunable parameter inside the model",
+"A unit of GPU memory",
+"Another word for a harness"
+],
+correct: 0,
+explanation: "Tokens are chunks of text, roughly three-quarters of an English word on average."
+},
+{
+week: "Week 3",
+type: "tf",
+q: "True or False: Open weight models like Llama and Qwen can be downloaded and run on your own hardware, while closed models like Claude and GPT run only on the vendor's servers.",
+options: ["True", "False"],
+correct: 0,
+explanation: "Closed models run on the vendor's servers, you rent access, while open weight models can be downloaded and run on your own hardware."
+}
+];
+
+let order = [];
+let pos = 0;
+let score = 0;
+let missed = [];
+let answered = false;
+let retryMode = false;
+
+const cardEl = document.getElementById("app-card");
+
+function shuffle(arr) {
+const a = arr.slice();
+for (let i = a.length - 1; i > 0; i--) {
+const j = Math.floor(Math.random() * (i + 1));
+const tmp = a[i];
+a[i] = a[j];
+a[j] = tmp;
+}
+return a;
+}
+
+function startRun(indices) {
+order = shuffle(indices);
+pos = 0;
+score = 0;
+missed = [];
+answered = false;
+renderQuestion();
+}
+
+function renderQuestion() {
+answered = false;
+const qIndex = order[pos];
+const q = QUESTIONS[qIndex];
+const total = order.length;
+
+cardEl.innerHTML = "<div class=\"progress-row\"><span>Question " + (pos + 1) + " of " + total + "</span><span>Score: " + score + "</span></div>" +
+"<div class=\"progress-bar\"><div class=\"progress-fill\" style=\"width:" + ((pos / total) * 100) + "%\"></div></div>" +
+"<div class=\"week-tag\">" + q.week + "</div>" +
+"<div class=\"question\">" + q.q + "</div>" +
+"<div class=\"options\" id=\"options\"></div>" +
+"<div id=\"feedback-slot\"></div>";
+
+const optionsEl = document.getElementById("options");
+q.options.forEach(function(optText, i) {
+const btn = document.createElement("button");
+btn.className = "option";
+btn.textContent = optText;
+btn.addEventListener("click", function() { selectAnswer(qIndex, i); });
+optionsEl.appendChild(btn);
+});
+}
+
+function selectAnswer(qIndex, choiceIndex) {
+if (answered) return;
+answered = true;
+const q = QUESTIONS[qIndex];
+const correct = choiceIndex === q.correct;
+if (correct) {
+score++;
+} else {
+missed.push(qIndex);
+}
+
+const buttons = document.querySelectorAll("#options .option");
+buttons.forEach(function(b, i) {
+b.disabled = true;
+if (i === q.correct) b.classList.add("correct");
+else if (i === choiceIndex) b.classList.add("incorrect");
+});
+
+const feedbackSlot = document.getElementById("feedback-slot");
+feedbackSlot.innerHTML = "<div class=\"feedback " + (correct ? "good" : "bad") + "\"><strong>" + (correct ? "Correct!" : "Not quite.") + "</strong>" + q.explanation + " (" + q.week + ")</div>" +
+"<button class=\"next-btn\" id=\"next-btn\">" + ((pos + 1 === order.length) ? "See results" : "Next question") + "</button>";
+document.getElementById("next-btn").addEventListener("click", function() {
+pos++;
+if (pos >= order.length) {
+renderResults();
+} else {
+renderQuestion();
+}
+});
+}
+
+function renderResults() {
+const total = order.length;
+const pct = Math.round((score / total) * 100);
+
+let missedListHtml = "";
+if (missed.length > 0) {
+missedListHtml = "<ul class=\"missed-list\">" + missed.map(function(i) {
+return "<li><span class=\"miss-week\">" + QUESTIONS[i].week + "</span><br>" + QUESTIONS[i].q + "</li>";
+}).join("") + "</ul>";
+}
+
+cardEl.innerHTML = "<div style=\"text-align:center\">" +
+"<div class=\"score-sub\">" + (retryMode ? "Retry results" : "Final score") + "</div>" +
+"<div class=\"score-headline\">" + score + " / " + total + "</div>" +
+"<div class=\"score-sub\">" + pct + "% correct</div></div>" +
+(missed.length > 0 ? "<div style=\"margin-top:10px;\"><strong>Missed questions:</strong></div>" + missedListHtml : "<p style=\"text-align:center;color:var(--good);\">Perfect run, nice work!</p>") +
+(missed.length > 0 ? "<button class=\"primary-btn\" id=\"retry-btn\">Retry missed questions (" + missed.length + ")</button>" : "") +
+"<button class=\"secondary-btn\" id=\"restart-btn\">Start over (all 20 questions)</button>";
+
+if (missed.length > 0) {
+document.getElementById("retry-btn").addEventListener("click", function() {
+retryMode = true;
+startRun(missed);
+});
+}
+document.getElementById("restart-btn").addEventListener("click", function() {
+retryMode = false;
+startRun(QUESTIONS.map(function(_, i) { return i; }));
+});
+}
+
+startRun(QUESTIONS.map(function(_, i) { return i; }));
+</script>
+</body>
+</html>
